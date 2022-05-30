@@ -1,5 +1,3 @@
-from turtle import Turtle
-from torch import double
 from tqdm import tqdm
 import os
 import sys
@@ -7,16 +5,17 @@ from collections import deque
 import numpy as np
 from utils.metrics import ap_per_class
 from utils.general import LOGGER
-
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+#2022 - 05 - 30 - 최종수정본
 #------------------------------------------------------------------
-ir_label = r"C:\Users\User\Desktop\car\yolov5-master\testing\ir" #IR 검출 라벨 경로
-rgb_label = r"C:\Users\User\Desktop\car\yolov5-master\testing\rgb" #RGB 검출 라벨 경로
-target_path = r"C:\Users\User\Desktop\car\yolov5-master\testing\target_cls.txt" #target_cls.txt 경로
-output_label=r"C:\Users\User\Desktop\car\yolov5-master\testing\output" #퓨전 라벨 output 경로
+ir_label = r"C:\Users\a\Desktop\yolo_fusion\testing\RGB_Rain\labels" #IR 검출 라벨 경로 <== 기준라벨 (타겟과 같아야함)
+rgb_label = r"C:\Users\a\Desktop\yolo_fusion\testing\IR_Rain\labels" #RGB 검출 라벨 경로
+target_path = r"C:\Users\a\Desktop\yolo_fusion\testing\RGB_Rain\target_cls.txt" #target_cls.txt 경로
+output_label=r"C:\Users\a\Desktop\yolo_fusion\testing\output_" #퓨전 라벨 output 경로
 #------------------------------------------------------------------
 # -----------------------------------------------------------------
 names={0:'person',1:'car'} #class (dictionary 형식)
-save_dir=r"C:\Users\User\Desktop\car\yolov5-master\testing\output" #결과 저장 경로
+save_dir=r"C:\Users\a\Desktop\yolo_fusion\testing\output_" #결과 저장 경로
 # -----------------------------------------------------------------
 
 ir_list = os.listdir(ir_label)
@@ -24,6 +23,10 @@ rgb_list = os.listdir(rgb_label)
 
 if not os.path.exists(output_label):
     os.mkdir(output_label)
+# print(len(ir_list),len(rgb_list))
+if len(ir_list) != len(rgb_list):
+    print('ir과 rgb 라벨수가 다릅니다! 실행을 중지합니다.')
+    sys.exit()
 
 ir = []
 rgb = []
@@ -36,16 +39,18 @@ for i, r in zip(ir_list,rgb_list):
     if '.txt' in r:
         rgb.append(r)
 
-if len(ir) != len(rgb):
-    print('ir과 rgb 라벨수가 다릅니다! 실행을 중지합니다.')
-    sys.exit()
 
-for i,r in zip(ir,rgb):
+for i,r in tqdm(zip(ir,rgb)):
     ir_path=ir_label+'\\'+i
     ir_txt=open(ir_path,'r')
     i_lines=ir_txt.readlines()
-    
+    fname=i.split('-')[1]
+    # rgb_path=rgb_label+'\\'+'lwir-'+fname #-------------------------------- lwir 또는 rgb로 바꾸세요
     rgb_path=rgb_label+'\\'+r
+    if not os.path.exists(rgb_path):
+        print("x")
+        continue
+
     rgb_txt=open(rgb_path,'r')
     r_lines=deque(rgb_txt.readlines())
 
@@ -77,6 +82,7 @@ for i,r in zip(ir,rgb):
 
             if i_conf < r_lines2[0][5]:
                 i_conf = r_lines2[0][5]
+                i_tp=True
 
         else:
             r_lines=False
